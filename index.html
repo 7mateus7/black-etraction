@@ -37,6 +37,9 @@
 
   .nl-wrap { display: none !important; }
 
+  /* Vídeo que mantém a TV acordada. Se a tela ainda apagar, aumente o tamanho: algumas TVs ignoram vídeo minúsculo. */
+  #awake { position: fixed; left: 0; bottom: 0; width: 2px; height: 2px; pointer-events: none; }
+
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 
   header {
@@ -224,7 +227,22 @@
   </defs>
 </svg>
 
+<video id="awake" src="keepawake.mp4" autoplay loop muted playsinline aria-hidden="true"></video>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js"></script>
+<script>
+  // Impede a TV de apagar a tela por inatividade: Wake Lock (precisa de HTTPS) + vídeo mudo em loop,
+  // já que a TV não entra em descanso enquanto há vídeo tocando. O intervalo retoma os dois se caírem.
+  const keepAwake = () => {
+    if (document.visibilityState !== 'visible') return;
+    navigator.wakeLock?.request('screen').catch(() => {});
+    const video = document.getElementById('awake');
+    if (video.paused) video.play().catch(() => {});
+  };
+  keepAwake();
+  document.addEventListener('visibilitychange', keepAwake);
+  setInterval(keepAwake, 30000);
+</script>
 <script>
   const $ = id => document.getElementById(id);
   const pad = n => String(n).padStart(2, '0');
